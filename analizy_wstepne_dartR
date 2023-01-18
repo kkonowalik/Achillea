@@ -7,7 +7,7 @@ require(plotly)
 #ustawiamy domyślny folder do zapisu
 setwd("C:/Users/KK/Desktop/Achillea/snp")
 
-#wczytujemy wyniki z sekwencjonowania
+#wczytujemy wyniki z sekwencjonowania, ważne są dwa pliki: "Report_DAch22-7432_SNP_2.csv" oraz "samples_DArT_with_data.csv"
 snp_3rd <-gl.read.dart(filename="C:/Users/KK/Desktop/Achillea/Report-DAch22-7432/Report_DAch22-7432_SNP_2.csv", ind.metafile="C:/Users/KK/Desktop/Achillea/snp/samples_DArT_with_data.csv")
 
 #jeśli chcemy usunąć osobniki, zmienić naze musimy zrobić nową tabelkę, gdzie kolumna po lewej oznacza starą nazwę, a po prawej nową (analogicznie można w ten sam sposób usuwać)
