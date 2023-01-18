@@ -10,7 +10,7 @@ setwd("C:/Users/KK/Desktop/Achillea/snp")
 #wczytujemy wyniki z sekwencjonowania, ważne są dwa pliki: "Report_DAch22-7432_SNP_2.csv" oraz "samples_DArT_with_data.csv"
 snp_3rd <-gl.read.dart(filename="C:/Users/KK/Desktop/Achillea/Report-DAch22-7432/Report_DAch22-7432_SNP_2.csv", ind.metafile="C:/Users/KK/Desktop/Achillea/snp/samples_DArT_with_data.csv")
 
-#jeśli chcemy usunąć osobniki, zmienić naze musimy zrobić nową tabelkę, gdzie kolumna po lewej oznacza starą nazwę, a po prawej nową (analogicznie można w ten sam sposób usuwać)
+#jeśli chcemy usunąć osobniki, zmienić nazwę musimy zrobić nową tabelkę, gdzie kolumna po lewej oznacza starą nazwę, a po prawej nową (analogicznie można w ten sam sposób usuwać osobnki wpisując po prawej delete)
 #na teraz jest to wyłączone
 #gl.make.recode.ind(snp_3rd, out.recode.file="new_ind_assignments.csv", outpath = getwd())
 #snp_3rd_rot <- gl.recode.ind(snp_3rd, ind.recode="D:/rot3/DART/new_ind_assignments.csv", recalc = TRUE, mono.rm = TRUE)
@@ -24,7 +24,7 @@ gl.report.reproducibility(snp_3rd)
 #i filtrujemy na poziomie 0.95
 snp_3rd_rep <- gl.filter.reproducibility(snp_3rd, t=0.95)
 
-#sprawdźmy callrate, czyli z jaką częśtością dany SNP się pojawiał
+#sprawdźmy callrate, czyli z jaką częstością dany SNP się pojawiał
 gl.report.callrate(snp_3rd_rep)
 #i filtrujmy na poziome 0.90
 snp_3rd_f_t3_25 <- gl.filter.callrate(snp_3rd_rep, method="loc",threshold=0.90)
@@ -32,7 +32,7 @@ snp_3rd_f_t3_25 <- gl.filter.callrate(snp_3rd_rep, method="loc",threshold=0.90)
 #dane są dobre więc możemy rozważyć czy całkiem nie odrzucić SNP które mają powtarzalność poniżej 1
 snp_3rd_f_t25_rep <- gl.filter.reproducibility(snp_3rd_f_t3_25, t=1)
 
-#możemy też odrzucić osobniki u któych brakuje więcej niż 10% danych (tzn. mają poniżej 90% czyli threshold =0.9)
+#możemy też odrzucić osobniki u któych brakuje więcej niż 10% danych (tzn. mają poniżej 90%, czyli threshold = 0.9)
 snp_3rd_f_t25_rep_mon_miss_ind <- gl.filter.callrate(snp_3rd_f_t25_rep_mon_miss, method="ind", mono.rm=TRUE, recalc=TRUE, threshold=0.90, recursive=TRUE)
 
 #możemy odfiltrować też paralogi
@@ -41,7 +41,7 @@ snp_3rd_f_t25_rep_mon_miss_ind_par <-gl.filter.hamming(snp_3rd_f_t25_rep_mon_mis
 #możemy także odfiltrować SNP któe nie spełniają kryterium Hardyego-Weinberga
 snp_3rd_f_t25_rep_mon_miss_ind_par_hwe <- gl.filter.hwe(snp_3rd_f_t25_rep_mon_miss_ind_par)
 
-##w tym miejscu mozna powtorzyc callrate i inne ktore byly uzywane przed usuwaniem osobnikow, poniwaz jesli jakies osobniki zostaly usuniete moze to zmienic rozklad w pozostalych allelach 
+##w tym miejscu można powtórzyć callrate i inne które były używane przed usuwaniem osobników, ponieważ jeśli jakieś osobniki zostały usunięte może to zmienić rozkład w pozostałych allelach 
 snp_3rd_f_t25_rep_mon_miss_ind_par_hwe_recalc <- gl.recalc.metrics(snp_3rd_f_t25_rep_mon_miss_ind_par_hwe)
 
 #teraz policzmy PCA
@@ -71,7 +71,7 @@ tree_clusters <- gl.tree.nj(snp_3rd_rot_cluster, type="phylogram")
 write.tree(tree_clusters, file ="tree_clusters.tre", append = FALSE, digits = 10, tree.names = FALSE)
 plot(nj(snp_3rd_f_t25_rep_mon_miss_ind_par_hwe_recalc), type="cladogram")
 
-#ważna analiza do DAPC, robi się ją następująco
+#ważna analiza to DAPC, robi się ją następująco
 #jest podobna do PCA, ale służy do danych genetycznych - więcej opisu do znalezienie w internecie
 dapc2 <- dapc(snp_3rd_f_t25_rep_mon_miss_ind_par_hwe_recalc, n.da=100, n.pca=500)
 temp <- optim.a.score(dapc2)
