@@ -1,0 +1,95 @@
+#tutoriale do dartR dostępne są pod adresem: http://georges.biomatix.org/dartR
+
+#wczytujemy potrzebne pakiety
+library(dartR)
+require(plotly)
+
+#ustawiamy domyślny folder do zapisu
+setwd("C:/Users/KK/Desktop/Achillea/snp")
+
+#wczytujemy wyniki z sekwencjonowania
+snp_3rd <-gl.read.dart(filename="C:/Users/KK/Desktop/Achillea/Report-DAch22-7432/Report_DAch22-7432_SNP_2.csv", ind.metafile="C:/Users/KK/Desktop/Achillea/snp/samples_DArT_with_data.csv")
+
+#jeśli chcemy usunąć osobniki, zmienić naze musimy zrobić nową tabelkę, gdzie kolumna po lewej oznacza starą nazwę, a po prawej nową (analogicznie można w ten sam sposób usuwać)
+#na teraz jest to wyłączone
+#gl.make.recode.ind(snp_3rd, out.recode.file="new_ind_assignments.csv", outpath = getwd())
+#snp_3rd_rot <- gl.recode.ind(snp_3rd, ind.recode="D:/rot3/DART/new_ind_assignments.csv", recalc = TRUE, mono.rm = TRUE)
+#snp_3rd_rot <- gl.recalc.metrics(snp_3rd_rot)
+
+#zacznynamy filtrowanie, wszystkie sposoby są pod adresem i tutoriale dostępne są pod adresem: http://georges.biomatix.org/dartR
+
+#najpierw sprawdzamy powtarzalność
+gl.report.reproducibility(snp_3rd)
+
+#i filtrujemy na poziomie 0.95
+snp_3rd_rep <- gl.filter.reproducibility(snp_3rd, t=0.95)
+
+#sprawdźmy callrate, czyli z jaką częśtością dany SNP się pojawiał
+gl.report.callrate(snp_3rd_rep)
+#i filtrujmy na poziome 0.90
+snp_3rd_f_t3_25 <- gl.filter.callrate(snp_3rd_rep, method="loc",threshold=0.90)
+
+#dane są dobre więc możemy rozważyć czy całkiem nie odrzucić SNP które mają powtarzalność poniżej 1
+snp_3rd_f_t25_rep <- gl.filter.reproducibility(snp_3rd_f_t3_25, t=1)
+
+#możemy też odrzucić osobniki u któych brakuje więcej niż 10% danych (tzn. mają poniżej 90% czyli threshold =0.9)
+snp_3rd_f_t25_rep_mon_miss_ind <- gl.filter.callrate(snp_3rd_f_t25_rep_mon_miss, method="ind", mono.rm=TRUE, recalc=TRUE, threshold=0.90, recursive=TRUE)
+
+#możemy odfiltrować też paralogi
+snp_3rd_f_t25_rep_mon_miss_ind_par <-gl.filter.hamming(snp_3rd_f_t25_rep_mon_miss_ind, threshold=0.2, pb=F)
+
+#możemy także odfiltrować SNP któe nie spełniają kryterium Hardyego-Weinberga
+snp_3rd_f_t25_rep_mon_miss_ind_par_hwe <- gl.filter.hwe(snp_3rd_f_t25_rep_mon_miss_ind_par)
+
+##w tym miejscu mozna powtorzyc callrate i inne ktore byly uzywane przed usuwaniem osobnikow, poniwaz jesli jakies osobniki zostaly usuniete moze to zmienic rozklad w pozostalych allelach 
+snp_3rd_f_t25_rep_mon_miss_ind_par_hwe_recalc <- gl.recalc.metrics(snp_3rd_f_t25_rep_mon_miss_ind_par_hwe)
+
+#teraz policzmy PCA
+pcHWE <- gl.pcoa(snp_3rd_f_t25_rep_mon_miss_ind_par_hwe_recalc,nfactors=3)
+
+#nie zaszkodzi też zapisać kopii zapasowej gdyby coś się zawiesiło
+save.image("workspace.RData")
+
+#teraz zróbmy wykres, ta formuła wyświetli nam 3 osie w przeglądarce internetowej
+gl.pcoa.plot(pcHWE, snp_3rd_f_t25_rep_mon_miss_ind_par_hwe, xaxis=1, yaxis=2, zaxis=3)
+
+#pojedyncze zestawy osi możemy wyświetlić następująco, 1. przykład to oś 1 i 2
+gl.pcoa.plot(pcHWE, snp_3rd_f_t25_rep_mon_miss_ind_par_hwe, xaxis=1, yaxis=2)
+gl.pcoa.plot(pcHWE, snp_3rd_f_t25_rep_mon_miss_ind_par_hwe, xaxis=1, yaxis=3)
+gl.pcoa.plot(pcHWE, snp_3rd_f_t25_rep_mon_miss_ind_par_hwe, xaxis=2, yaxis=3)
+
+#zapisujemy :) 
+save.image("workspace.RData")
+
+#możemy wygenerować plik do analizy w structure
+#gl2structure(snp_3rd_f_t25_rep_mon_miss_ind_par_hwe, addcolumns = snp_3rd_f_t25_rep_mon_miss_ind_par_hwe$pop, ploidy =6, exportMarkerNames = TRUE, outfile = "achillea6x_silicoDArTcorrect_populations.str", outpath = getwd(), verbose = NULL)
+
+#możemy zrobić drzewo z użyciem metody najbliższego sąsiada
+library(ape)
+gl.tree.nj(snp_3rd_rot_cluster, type="phylogram")
+tree_clusters <- gl.tree.nj(snp_3rd_rot_cluster, type="phylogram")
+write.tree(tree_clusters, file ="tree_clusters.tre", append = FALSE, digits = 10, tree.names = FALSE)
+plot(nj(snp_3rd_f_t25_rep_mon_miss_ind_par_hwe_recalc), type="cladogram")
+
+#ważna analiza do DAPC, robi się ją następująco
+#jest podobna do PCA, ale służy do danych genetycznych - więcej opisu do znalezienie w internecie
+dapc2 <- dapc(snp_3rd_f_t25_rep_mon_miss_ind_par_hwe_recalc, n.da=100, n.pca=500)
+temp <- optim.a.score(dapc2)
+#optymalna liczba osi do pozostawienia to 11
+dapc3 <- dapc(snp_3rd_f_t25_rep_mon_miss_ind_par_hwe_recalc, n.da=11, n.pca=11)
+scatter(dapc3, bg="white")
+scatter(dapc3,1,3, bg="white")
+scatter(dapc3,2,3, bg="white")
+
+#wykres słupkowy
+compoplot(dapc3)
+compoplot(dapc3, show.lab = TRUE, lab = rownames(x), legend = TRUE, txt.leg = colnames(x), bg = transp("white"), cleg=.8, posi=list(x=0,y=1.4))
+compoplot(dapc3, show.lab = TRUE, lab = rownames(x), legend = TRUE, txt.leg = colnames(x), bg = transp("white"), cleg=.6, posi=list(x=0,y=1.4), cex.names = 0.2)
+write.csv(dapc3$posterior, "dapc3_posterior.csv", append = FALSE, sep = ",", eol = "\n", na = "NA", dec = ".", col.names = TRUE, row.names = TRUE)
+
+
+save.image("workspace.RData")
+
+#można wykonać jeszcze wiele dodatkowych analiz... 
+#_____________________________
+
